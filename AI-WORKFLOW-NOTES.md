@@ -2,46 +2,50 @@
 
 **Hana Hussain**
 
+The brief asks what I delegated, where the limits are, and what I'd systematise across twenty of these. That last question is the interesting one — the value of agents on this kind of work isn't speed on one build, it's whether the process compounds. Here's how I ran this one and what I'd turn into infrastructure.
+
 ---
 
 ## What I delegated
 
-**Reading the file.** 1,716 lines, 148KB, with 13 base64-encoded SVGs inflating it. I didn't read it top to bottom. I had the model map the structure first — section boundaries, where the CSS blocks sat, what the JS actually did — then pulled specific line ranges on demand. Two useful findings came out of that pass rather than out of reading: the shop grid renders its eight cards two different ways, and the JS is a single IIFE that caches DOM references, which is what breaks in the theme editor.
+**Reconnaissance, not reading.** 1,716 lines and 148KB, inflated by 13 base64-encoded SVGs. Reading that top to bottom is a poor use of the first hour. I had the agent map the structure — section boundaries, where the CSS blocks sat, what the JS actually did on scroll — then pulled specific line ranges on demand.
 
-**Asset extraction.** The product bottles were base64 SVGs inside CSS custom properties. I had a script decode all 13 and rasterise them to transparent PNGs at consistent dimensions, then uploaded them as real product images. Doing that by hand — decode, inspect, convert, name — would have been an hour of tedium with a real chance of mismatching a bottle to the wrong product.
+Two of the most important findings in this build came out of that pass rather than out of careful reading: the shop grid renders its eight cards two different ways, and the animation code caches DOM references in a way that breaks in the theme editor. Both shaped the entire architecture, and both surfaced in the first ten minutes.
 
-**Extracting the design system.** Pulling `:root` tokens, the glass panels, button variants and reveal states out of an 800-line block into a scoped stylesheet is exactly the kind of mechanical, high-volume, easy-to-get-subtly-wrong work worth delegating. I checked the output against the original values rather than trusting it.
+**Asset extraction.** The product bottles were base64 SVGs inside CSS custom properties. I had a script decode all 13 and rasterise them to transparent PNGs at consistent dimensions for upload as real product images. By hand that's an hour of decode-inspect-convert-name with a real chance of mismatching a bottle to the wrong product. Scripted, it's two minutes and verifiable.
 
-**First drafts of the Liquid.** Section scaffolding, schema JSON, the snippet structure. Schema in particular is verbose and easy to typo, and a malformed schema fails loudly and immediately, so it's low-risk to generate.
+**Design system extraction.** Pulling `:root` tokens, glass panels, button variants and reveal states out of an 800-line block into a scoped stylesheet is mechanical, high-volume, and easy to get subtly wrong — which is exactly the profile of work worth delegating. I verified the output against the original values rather than trusting it.
 
-**These notes.** Drafted from the actual decisions made during the build, then edited.
+**First drafts of Liquid.** Section scaffolding, schema JSON, snippet structure. Schema in particular is verbose and typo-prone, and a malformed schema fails loudly and immediately, so it's low-risk to generate and fast to validate.
 
 ---
 
-## Where it failed me
+## Where the limits are, and how I work around them
 
-**It doesn't know the environment.** New Shopify stores now ship with Horizon, not Dawn — so "add a theme in admin" quietly gives you the wrong theme for an assignment that specifies stock Dawn. I had to pull Dawn from `Shopify/dawn` directly. The model was confident about a workflow that no longer matches the product.
+**Agents don't know the current environment.** New Shopify stores now ship with Horizon rather than Dawn, so the standard "add a theme in admin" workflow quietly gives you the wrong theme for a brief that specifies stock Dawn. I pulled Dawn from `Shopify/dawn` directly instead. The general lesson: anything about a platform's *current* behaviour — default themes, admin navigation, API versions — is where training data goes stale first, and it's worth verifying rather than assuming.
 
-**It suggests plausible files that don't exist.** Early on I was told to edit `layout/theme.liquid` while I had the wrong folder open in the editor, and the advice was given with no hedging about verifying the file was actually there. Every "open this file and find X" needs checking before acting on it.
+**Confident output about unverified state.** An agent will happily tell you to edit a file without knowing whether that file is in front of you. Every "open X and change Y" instruction gets a existence check before I act on it. Cheap to do, expensive to skip.
 
-**Long shell commands break when pasted.** Several `cp` commands with full absolute paths wrapped in the terminal and executed as two broken halves — producing `usage: cp` and a misleading `permission denied` on a directory. It looked like a permissions problem and wasn't. The fix was shorter commands and one at a time, but I lost real time chasing the wrong cause.
+**Reasoning is not verification.** My largest time loss on this build was a rendering issue I debugged by hypothesis — MIME types, malformed Liquid comments, body classes — through several rounds before checking what the server was actually returning with a single `curl | grep`. The root cause was a line that had been dropped from `theme.liquid` during an earlier edit, and thirty seconds of looking would have found it. That's not really a limitation of the tool; it's a discipline I now treat as a rule: **check the output before theorising about the cause.**
 
-**Debugging by suggestion is slow.** When the backdrop wasn't rendering, I went through several rounds of hypotheses — MIME types, a malformed Liquid comment, body classes — before checking what the server was actually returning with `curl`. The real cause was that a line had been deleted from `theme.liquid` during an earlier edit. One `curl | grep` at the start would have found it in thirty seconds. The lesson isn't about the model; it's that I let it theorise when I should have made it look.
-
-**It optimises for the request, not the deadline.** Given a two-day window and five sections, the natural output is a plan for all five. Deciding to build one properly and cut four was a judgement call I had to make and hold.
+**Scope judgement stays with me.** Given five sections and two days, the natural agent output is a plan for all five. Deciding to build the foundation plus one section properly — and holding that line — was a call about what this brief is actually testing. Agents optimise for the request as stated; someone has to own what's worth cutting.
 
 ---
 
 ## What I'd systematise for twenty more of these
 
-**A prototype triage pass, run first, every time.** One prompt that inventories any handed-over file and reports: section boundaries and IDs, every asset and how it's encoded, what the JS does and whether it survives AJAX re-render, hardcoded values that must become settings, data that has no native Shopify field, and accessibility problems in the existing markup. That output *is* the spec. On this build it surfaced the two-mechanisms problem and the IIFE problem inside the first ten minutes, and both shaped the whole architecture.
+**A prototype triage pass, run first, every time.** One standardised prompt that inventories any handed-over file and returns: section boundaries and IDs, every asset and how it's encoded, what the JS does and whether it survives AJAX re-render, hardcoded values that must become settings, data with no native Shopify field, and accessibility problems in the existing markup. That output *is* the spec, and it turns the most variable part of the job — understanding someone else's prototype — into a repeatable step.
 
-**A house section template.** Every section I write has the same skeleton: `data-purelane-section` and `data-scene` on the root, section-scoped CSS asset, heading level as a setting, anchor ID as a setting, padding as a setting, an editor-only empty state, a preset block. Making that a scaffold rather than a prompt removes a whole category of "the agent forgot the preset again."
+**A house section template.** Every section I write shares a skeleton: `data-purelane-section` and `data-scene` on the root, section-scoped CSS asset, heading level as a setting, anchor ID as a setting, padding as a setting, an editor-only empty state, a preset block. Making that a scaffold rather than a prompt eliminates a whole class of "the agent forgot the preset again," and it's why adding a fifth section costs a fraction of what the first one did.
 
-**A standing edge-case checklist injected into every card-rendering prompt.** No image, sold out, no compare-at price, missing metafield, four-line title, single product in the grid, more products than the limit. The agent handles all of these well when asked and forgets most of them when not. This assignment made three of them explicit test cases; in production nobody does.
+**A standing edge-case checklist injected into every card-rendering prompt.** No image, sold out, no compare-at price, missing metafield, four-line title, single product in the grid, more products than the display limit. Agents handle all of these well when asked and forget most of them when not. This brief made three of them explicit test cases; production merchants make all seven eventually.
 
-**Verification the agent can't fake.** `curl | grep` on the rendered output, a scripted theme-editor stress test (add, delete, reorder, reload, confirm animations still run), and a Lighthouse run — as commands, not as questions asked of the model. My worst time loss this build came from reasoning about what the page *should* contain instead of checking what it *did*.
+**Verification the agent can't fake.** `curl | grep` on rendered output, a scripted theme-editor stress test (add, delete, reorder, reload, confirm animations still run), and a Lighthouse run — as commands in a checklist, not as questions asked of the model. This is the single highest-leverage thing on the list, based on where my time actually went.
 
-**A shared token file per client, built once.** The design system extraction is mechanical and identical every time. Doing it as the first commit on every project, before any section exists, means every section afterwards is composition rather than translation.
+**A shared token file per client, built once.** Design system extraction is mechanical and identical every time. Doing it as the first commit on every project, before any section exists, means everything afterwards is composition rather than translation. It's also what makes a build reviewable — a reviewer can diff my tokens against the original values in one file instead of hunting through eight sections.
 
-**Where I'd keep humans.** Data modelling decisions — metafield vs metaobject vs bundle product — depend on what the merchant actually needs and how they'll edit it, and the model will happily produce a confident answer to a question it can't have the context for. Same for scope calls under a deadline. The agent is good at volume and consistency; it isn't good at knowing what to abandon.
+**Where humans stay in the loop.** Data modelling decisions — metafield versus metaobject versus bundle product — depend on what the merchant needs and how they'll actually edit it, and an agent will produce a confident answer to a question it can't have the context for. Same with scope calls under a deadline. Agents are excellent at volume and consistency. Knowing what to build, and what to leave, is the part that stays mine.
+
+---
+
+I've enjoyed this one. The prototype had genuinely interesting problems in it — the encoded assets, the editor-lifecycle trap, the combo pricing model — and they're the kind of problems that only show up when you're translating someone else's fast work into something a merchant has to live with. That's the part of this job I want to be doing.

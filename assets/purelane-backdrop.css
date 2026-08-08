@@ -1,0 +1,98 @@
+/* ============================================================
+   purelane-backdrop.css
+   Styles for snippets/purelane-backdrop.liquid - the fixed
+   gradient scenes, water layers, bubbles and vignette.
+
+   Loaded once from theme.liquid alongside the snippet.
+   Values are verbatim from purelane-homepage.html; selectors are
+   scoped under .purelane so they cannot leak into other templates.
+   ============================================================ */
+
+.purelane .scenes{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;background:var(--brand)}
+.purelane .scene{position:absolute;inset:0;opacity:0;transition:opacity 1.5s ease}
+.purelane .scene.on{opacity:1}
+.purelane .s1{background:linear-gradient(178deg,#1ea38d 0%,#0b8578 22%,#017069 48%,#4b3a8f 74%,#01524e 100%)}
+.purelane .s2{background:linear-gradient(178deg,#12907f 0%,#04756e 26%,#4b3a8f 58%,#01514d 100%)}
+.purelane .s3{background:linear-gradient(178deg,#067c71 0%,#00625d 30%,#014e4a 64%,#023c39 100%)}
+.purelane .s4{background:linear-gradient(178deg,#036359 0%,#014b46 32%,#013431 66%,#012422 100%)}
+
+/* ---------- WATER CINEMATICS ---------- */
+.purelane .water{position:absolute;inset:-14% -10%;pointer-events:none;transition:opacity 1.2s ease}
+.purelane .wl{position:absolute;inset:0;will-change:transform;translate:var(--px,0) var(--py,0)}
+.purelane .wl .sv{width:100%;height:100%}
+.purelane .wl-a{mix-blend-mode:screen;opacity:.8;animation:drift-a 34s linear infinite}
+.purelane .wl-b{mix-blend-mode:screen;opacity:.54;animation:drift-b 23s linear infinite}
+.purelane .wl-c{mix-blend-mode:screen;opacity:.5;animation:shaft-sway 19s ease-in-out infinite}
+.purelane .wl-s{mix-blend-mode:screen;opacity:.7;animation:surface 11s ease-in-out infinite;transform-origin:50% 0}
+@keyframes drift-a{
+  0%{transform:translate3d(-3%,0,0) scale(1.06)}
+  50%{transform:translate3d(3%,-1.6%,0) scale(1.13)}
+  100%{transform:translate3d(-3%,0,0) scale(1.06)}
+}
+@keyframes drift-b{
+  0%{transform:translate3d(4%,1%,0) scale(1.1)}
+  50%{transform:translate3d(-4%,-1%,0) scale(1.04)}
+  100%{transform:translate3d(4%,1%,0) scale(1.1)}
+}
+@keyframes shaft-sway{
+  0%{transform:translate3d(-2%,0,0) skewX(0deg);opacity:.34}
+  50%{transform:translate3d(2%,0,0) skewX(2.4deg);opacity:.6}
+  100%{transform:translate3d(-2%,0,0) skewX(0deg);opacity:.34}
+}
+@keyframes surface{
+  0%{transform:translateY(0) scaleY(1);opacity:.55}
+  50%{transform:translateY(-1.4%) scaleY(1.14);opacity:.82}
+  100%{transform:translateY(0) scaleY(1);opacity:.55}
+}
+/* depth response */
+.purelane .scenes[data-d="1"] .water{opacity:1}
+.purelane .scenes[data-d="2"] .water{opacity:.8}
+.purelane .scenes[data-d="3"] .water{opacity:.58}
+.purelane .scenes[data-d="4"] .water{opacity:.34}
+.purelane .scenes[data-d="1"] .wl-s{opacity:.7}
+.purelane .scenes[data-d="2"] .wl-s,.purelane .scenes[data-d="3"] .wl-s,.purelane .scenes[data-d="4"] .wl-s{opacity:0}
+
+/* bubbles */
+.purelane .bub{position:absolute;inset:0;overflow:hidden}
+.purelane .bub span{position:absolute;bottom:-6%;left:var(--x);width:var(--s);height:var(--s);border-radius:50%;
+  border:1px solid rgba(230,255,242,.5);background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.42),rgba(255,255,255,0) 62%);
+  animation:rise var(--dur) linear infinite;animation-delay:var(--dly);opacity:0}
+@keyframes rise{
+  0%{transform:translate3d(0,0,0);opacity:0}
+  12%{opacity:.7}
+  88%{opacity:.5}
+  100%{transform:translate3d(var(--drift),-116vh,0);opacity:0}
+}
+
+.purelane .vig{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(126% 86% at 50% 28%,transparent 38%,rgba(1,50,46,.20) 78%,rgba(1,34,32,.44) 100%),
+             linear-gradient(180deg,rgba(1,38,36,.30) 0%,transparent 18%,transparent 66%,rgba(1,32,30,.40) 100%)}
+
+/* ------------------------------------------------------------
+   ADDED: reduced motion.
+   The prototype gated the JS parallax on prefers-reduced-motion but
+   left these CSS keyframe animations running regardless, so a user
+   who had asked for less motion still got drifting water, rising
+   bubbles and a swaying light shaft. Stopped here.
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .purelane .wl-a,
+  .purelane .wl-b,
+  .purelane .wl-c,
+  .purelane .wl-s { animation: none; }
+  .purelane .bub span { animation: none; opacity: 0; }
+  .purelane .scene { transition: none; }
+}
+
+/* ------------------------------------------------------------
+   ADDED: performance.
+   feTurbulence + feDisplacementMap are expensive to rasterise. On
+   small screens the water detail is barely visible but still costs
+   paint time on exactly the devices least able to afford it, which
+   shows up directly in INP and LCP. Dropped below 750px.
+   ------------------------------------------------------------ */
+@media (max-width: 749px) {
+  .purelane .wl-b,
+  .purelane .wl-c { display: none; }
+  .purelane .bub span:nth-child(n+7) { display: none; }
+}

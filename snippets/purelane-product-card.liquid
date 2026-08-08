@@ -1,0 +1,147 @@
+{%- comment -%}
+  purelane-product-card.liquid
+  ----------------------------
+  ONE card renderer shared by the shop grid, combos and bundles.
+  The prototype hand-wrote each card, and the shop grid alone used two
+  different methods for the same visual: four cards drew their bottle
+  from a CSS custom property, four pasted a full inline SVG. This
+  snippet replaces both with a single Shopify-data-driven card.
+
+  USAGE
+    {% render 'purelane-product-card',
+         product: product,
+         reveal_delay: forloop.index0,
+         show_badge: section.settings.show_badges,
+         image_ratio: 'natural' %}
+
+  PARAMETERS
+    product        (required) a product object
+    reveal_delay   (optional) 0-4, maps to .rv-d1 .. .rv-d4
+    show_badge     (optional) default true
+    image_ratio    (optional) 'natural' | 'square', default 'natural'
+
+  EDGE CASES HANDLED — these are the three seeded products
+    - no image     -> renders a neutral placeholder box, card keeps height
+    - sold out     -> button becomes a disabled "Sold out", price still shown
+    - long title   -> clamped to 2 lines, full text kept for screen readers
+    - no compare-at price -> discount chip and strikethrough omitted
+    - missing rating/badge metafield -> that row omitted, no empty markup
+{%- endcomment -%}
+
+{%- liquid
+  assign show_badge = show_badge | default: true, allow_false: true
+  assign reveal_delay = reveal_delay | default: 0
+  assign rating = product.metafields.custom.rating.value
+  assign review_count = product.metafields.custom.review_count.value
+  assign badge = product.metafields.custom.badge.value
+
+  assign on_sale = false
+  if product.compare_at_price > product.price
+    assign on_sale = true
+    assign discount = product.compare_at_price | minus: product.price | times: 100.0 | divided_by: product.compare_at_price | round
+  endif
+-%}
+
+<article
+  class="glass card rv{% if reveal_delay > 0 %} rv-d{{ reveal_delay }}{% endif %}"
+  {% if product.id %}data-product-id="{{ product.id }}"{% endif %}
+>
+  <div class="shot{% if image_ratio == 'square' %} shot--square{% endif %}">
+    {%- if show_badge and badge != blank -%}
+      <span class="pill">{{ badge | escape }}</span>
+    {%- endif -%}
+
+    {%- if product.featured_image -%}
+      {%- comment -%}
+        width/height are set so the browser reserves space before the image
+        arrives. The prototype had no <img> at all, so it had no CLS; a naive
+        port that drops in bare <img> tags reintroduces it.
+        First two cards load eagerly (likely above the fold), rest lazily.
+      {%- endcomment -%}
+      <img
+        src="{{ product.featured_image | image_url: width: 520 }}"
+        srcset="{{ product.featured_image | image_url: width: 260 }} 260w,
+                {{ product.featured_image | image_url: width: 520 }} 520w,
+                {{ product.featured_image | image_url: width: 780 }} 780w"
+        sizes="(min-width: 990px) 260px, (min-width: 750px) 33vw, 44vw"
+        alt="{{ product.featured_image.alt | default: product.title | escape }}"
+        width="{{ product.featured_image.width }}"
+        height="{{ product.featured_image.height }}"
+        loading="{% if reveal_delay < 2 %}eager{% else %}lazy{% endif %}"
+        {% if reveal_delay < 2 %}fetchpriority="high"{% endif %}
+        decoding="async"
+        class="pimg-real"
+      >
+    {%- else -%}
+      {%- comment -%} Seeded product 9 has no image on purpose. {%- endcomment -%}
+      <span class="pimg-empty" role="img"
+            aria-label="{{ 'products.product.no_image' | t: default: 'No image available' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+          <rect x="3.5" y="4.5" width="17" height="15" rx="3"/>
+          <circle cx="9" cy="10" r="1.8"/>
+          <path d="m4.5 17 4.6-4.3 3.2 3 3-2.6 4.2 3.9"/>
+        </svg>
+      </span>
+    {%- endif -%}
+  </div>
+
+  <h3 class="card__title">
+    <a href="{{ product.url }}" class="card__link">
+      <span class="card__title-text">{{ product.title }}</span>
+    </a>
+  </h3>
+
+  {%- if rating != blank -%}
+    {%- comment -%}
+      Semantic rating markup. The prototype used a bare ★ glyph inside <b>,
+      which a screen reader announces as "black star 4.8" with no context.
+    {%- endcomment -%}
+    <div class="rate">
+      <b>
+        <span aria-hidden="true">★</span>
+        {{ rating }}
+      </b>
+      {%- if review_count != blank -%}
+        <span class="rate__sep" aria-hidden="true">·</span>
+        <span>{{ review_count }} reviews</span>
+      {%- endif -%}
+      <span class="visually-hidden">
+        Rated {{ rating }} out of 5{% if review_count != blank %} from {{ review_count }} reviews{% endif %}
+      </span>
+    </div>
+  {%- endif -%}
+
+  <div class="pr">
+    <strong>{{ product.price | money }}</strong>
+    {%- if on_sale -%}
+      <s>
+        <span class="visually-hidden">Regular price</span>
+        {{ product.compare_at_price | money }}
+      </s>
+      <em>{{ discount }}% off</em>
+    {%- endif -%}
+  </div>
+
+  {%- if product.available -%}
+    {%- comment -%}
+      A real add-to-cart form, not the prototype's decorative <button>.
+      Posting to /cart/add means the card still works with JS disabled.
+    {%- endcomment -%}
+    <product-form>
+      {%- form 'product', product, id: null, class: 'card__form', novalidate: 'novalidate' -%}
+        <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+        <input type="hidden" name="quantity" value="1">
+        <button type="submit" class="btn btn-ghost btn-sm" name="add">
+          Add to cart
+          <span class="visually-hidden">, {{ product.title }}</span>
+        </button>
+      {%- endform -%}
+    </product-form>
+  {%- else -%}
+    <button type="button" class="btn btn-ghost btn-sm" disabled aria-disabled="true">
+      Sold out
+      <span class="visually-hidden">, {{ product.title }}</span>
+    </button>
+  {%- endif -%}
+</article>

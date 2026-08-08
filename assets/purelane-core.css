@@ -1,0 +1,193 @@
+/* ============================================================
+   purelane-core.css
+   Design tokens + primitives shared by every Purelane section.
+   Loaded once from theme.liquid. Section-specific CSS lives in
+   its own asset file and is loaded by that section only.
+
+   Extracted verbatim from purelane-homepage.html. Values are the
+   spec — do not "tidy" them.
+   ============================================================ */
+
+.purelane {
+  --ink: #17102b;
+  --deep: #241a3d;
+  --brand: #4b3a8f;
+  --brand-lt: #6b55b8;
+  --paper: #ece6f7;
+  --paper-2: rgba(236, 230, 247, 0.74);
+  --paper-3: rgba(236, 230, 247, 0.52);
+  --accent: #f0a03c;
+  --accent-2: #c9761d;
+  --surface: #faf7fd;
+  --g-bg: linear-gradient(158deg, rgba(236,230,247,.15), rgba(75,58,143,.20) 58%, rgba(23,16,43,.28));
+  --g-line: rgba(236, 230, 247, 0.22);
+  --g-shadow: 0 26px 74px rgba(18, 12, 34, 0.44);
+  --g-inset: inset 0 1px 0 rgba(255, 255, 255, 0.24);
+  --r: 26px;
+  --r-sm: 16px;
+  --maxw: 1180px;
+  --sec-y: 34px;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+
+/* ------------------------------------------------------------
+   Body-level setup.
+   The prototype styled bare `body`. In a theme that would leak into
+   every template, so it is scoped to a class Dawn's <body> receives
+   only on templates that use Purelane sections.
+   ------------------------------------------------------------ */
+body.purelane {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  line-height: 1.62;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
+  padding-bottom: 74px;
+}
+@media (min-width: 960px) {
+  body.purelane { padding-bottom: 0; }
+}
+
+.purelane :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ---------------- TYPE ---------------- */
+.purelane .d1,
+.purelane .d2,
+.purelane .d3,
+.purelane .d4 {
+  font-family: 'Outfit', system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -.018em;
+  font-weight: 800;
+  line-height: .87;
+  color: var(--surface);
+}
+.purelane .d1 { font-size: clamp(48px, 8.6vw, 112px); }
+.purelane .d2 { font-size: clamp(30px, 4.6vw, 54px); line-height: .94; }
+.purelane .d3 { font-size: clamp(21px, 2.5vw, 30px); line-height: 1.04; font-weight: 700; letter-spacing: -.01em; }
+.purelane .d4 { font-size: clamp(16px, 1.6vw, 19px); line-height: 1.14; font-weight: 700; letter-spacing: .005em; }
+
+.purelane .lime { color: var(--accent); }
+.purelane .lede { font-size: clamp(15px, 1.35vw, 17.5px); color: var(--paper-2); max-width: 44ch; }
+.purelane .body-s { font-size: 14.5px; color: var(--paper-2); line-height: 1.66; }
+.purelane .kicker {
+  font-size: 11px; font-weight: 700; letter-spacing: .22em;
+  text-transform: uppercase; color: var(--paper-3);
+}
+
+.purelane .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 18px; }
+
+/* ---------------- GLASS ---------------- */
+.purelane .glass {
+  background: var(--g-bg);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid var(--g-line);
+  border-radius: var(--r);
+  box-shadow: var(--g-shadow), var(--g-inset);
+  position: relative;
+  overflow: hidden;
+}
+.purelane .glass::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(115deg, rgba(255,255,255,.16), transparent 30%, transparent 72%, rgba(240,160,60,.07));
+}
+.purelane .glass-2 {
+  background: linear-gradient(158deg, rgba(236,230,247,.10), rgba(0,48,46,.22));
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+  border: 1px solid rgba(236, 230, 247, .16);
+  border-radius: var(--r);
+  box-shadow: 0 18px 48px rgba(18,12,34,.36), inset 0 1px 0 rgba(255,255,255,.16);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ---------------- BUTTONS ---------------- */
+.purelane .btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  height: 46px; padding: 0 22px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 700; letter-spacing: .13em;
+  text-transform: uppercase; transition: .35s var(--ease); white-space: nowrap;
+  border: none; cursor: pointer; font-family: inherit; text-decoration: none;
+}
+.purelane .btn svg { width: 15px; height: 15px; flex: 0 0 auto; }
+.purelane .btn-primary {
+  background: linear-gradient(135deg, var(--accent-2), #5d8d1c);
+  color: #08211a;
+  box-shadow: 0 12px 30px rgba(201,118,29,.34), inset 0 1px 0 rgba(255,255,255,.34);
+}
+.purelane .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 40px rgba(201,118,29,.44), inset 0 1px 0 rgba(255,255,255,.4);
+}
+.purelane .btn-ghost {
+  background: rgba(236,230,247,.10);
+  border: 1px solid rgba(236,230,247,.30);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--surface);
+}
+.purelane .btn-ghost:hover { background: rgba(236,230,247,.18); transform: translateY(-2px); }
+.purelane .btn-sm { height: 38px; padding: 0 18px; font-size: 11px; letter-spacing: .14em; }
+
+/* Disabled state — needed for the sold-out product, which the
+   prototype never accounted for because it had no real inventory. */
+.purelane .btn[disabled],
+.purelane .btn[aria-disabled="true"] {
+  opacity: .45;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+}
+
+/* ---------------- REVEAL ON SCROLL ---------------- */
+.purelane .rv {
+  opacity: 0;
+  transform: translateY(30px);
+  filter: blur(7px);
+  transition: opacity .95s var(--ease), transform .95s var(--ease), filter .95s var(--ease);
+}
+.purelane .rv.in { opacity: 1; transform: none; filter: none; }
+.purelane .rv-d1 { transition-delay: .09s; }
+.purelane .rv-d2 { transition-delay: .18s; }
+.purelane .rv-d3 { transition-delay: .27s; }
+.purelane .rv-d4 { transition-delay: .36s; }
+.purelane .rv-d5 { transition-delay: .45s; }
+
+/* ---------------- SHARED RULE ORNAMENT ---------------- */
+.purelane .rule {
+  display: flex; align-items: center; gap: 13px;
+  margin: 0 0 20px; max-width: 270px;
+}
+.purelane .rule i { height: 1px; flex: 1; background: linear-gradient(90deg, rgba(236,230,247,.44), transparent); }
+.purelane .rule svg { width: 16px; height: 16px; color: var(--accent); flex: 0 0 auto; }
+
+/* ------------------------------------------------------------
+   REDUCED MOTION
+   The prototype handled this in JS only, so CSS-driven animation
+   (reveals, ticker, drift) still ran for users who had asked for
+   less motion. Enforced here in CSS as well.
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  .purelane .rv {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    transition: none !important;
+  }
+  .purelane *,
+  .purelane *::before,
+  .purelane *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,42 @@
+/* ============================================================
+   purelane-shop.css
+   Section wrapper styles for sections/purelane-shop.liquid.
+   Card styling lives in purelane-card.css.
+   ============================================================ */
+
+.purelane .sec {
+  position: relative;
+  /* z-index lifts section content above the fixed backdrop, which sits
+     at z-index 0. The prototype relied on source order; that breaks the
+     moment a merchant reorders sections in the editor. */
+  z-index: 2;
+  padding: var(--sec-y-override, var(--sec-y)) 0;
+}
+
+.purelane .panel-head {
+  text-align: center;
+  margin-bottom: 26px;
+}
+.purelane .panel-head .d2 { margin-bottom: 12px; }
+.purelane .panel-head .rule {
+  margin: 0 auto;
+  justify-content: center;
+  max-width: 240px;
+}
+.purelane .panel-head .rule i:first-child {
+  background: linear-gradient(90deg, transparent, rgba(236, 230, 247, .44));
+}
+
+/* ADDED: the prototype had no "view all" affordance because it only ever
+   showed eight fixed cards. With a real collection a merchant may hold
+   more products than the grid displays, so the overflow needs a route. */
+.purelane .shop__more {
+  display: flex;
+  justify-content: center;
+  margin-top: 22px;
+}
+
+/* Light-surface variant, from the prototype's light-scheme overrides */
+.purelane .light .panel-head .rule i:first-child {
+  background: linear-gradient(90deg, transparent, rgba(75, 58, 143, .34));
+}
